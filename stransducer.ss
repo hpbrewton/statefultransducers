@@ -121,7 +121,7 @@
 )
 
 (define ex1 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
-            [a : ('(1 (<= (r 1) 100)) / (1 (+ ahole)) -> a)]
+            [a : ('(1 (<= (r 1) 100)) / (1 ahole1) -> a)]
             [a : ('(1 (<= 100 (r 1))) / (1 (r 0)) -> b)]
             [b : ('(1 #t) / #t -> b)]
             )
@@ -175,16 +175,16 @@
       )
   )
 
-(define sol3
-  (synthesize
-   #:forall (list)
-   #:guarantee (assert
-                (and
-                 (equal? (ex2 '(1 1)) (list->vector '(0 2)))
-                 (equal? (ex2 '(1 1 1 1 1)) (list->vector '(0 0)))
-                 )
-                )
-   )
-  )
+;(define sol3
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and
+;                 (equal? (ex2 '(1 1)) (list->vector '(0 2)))
+;                 (equal? (ex2 '(1 1 1 1 1)) (list->vector '(0 0)))
+;                 )
+;                )
+;   )
+;  )
               
   
