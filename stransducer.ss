@@ -51,32 +51,32 @@
 
 (define-syntax stransducer
    (syntax-rules (: -> /)
-     [(_ init-state vmap vid vmatch [state : (guard / data -> target) ...] ...)
+     [(_ init-state vmap vid vmatch [state : (guard / data / out -> target) ...] ...)
       (letrec ([step
              ; astate is the automata state
              ; vstate is the vector state
              ; symbol is the current symbol under questions
-             (lambda (astate vstate symbol)
+             (lambda (output astate vstate symbol)
                (case astate
                    [(state) (cond
-                            [(vmatch guard symbol vstate) (list 'target (vmap 'data vstate))] ...
-                            [else  (error (list astate vstate))]
+                            [(vmatch guard symbol vstate) (list (cons out output) 'target (vmap 'data vstate))] ...
+                            [else  ((error (list output astate vstate)))]
                             )
                           ] ...
                  [else (error "cou;d not mathc")]
                  )
                )]
                [feed
-                (lambda (astate vstate stream)
+                (lambda (output astate vstate stream)
                   (if (empty? stream)
                       vstate
-                      (let ([result (step astate vstate (first stream))])
-                        (feed (first result) (second result) (rest stream))
+                      (let ([result (step output astate vstate (first stream))])
+                        (feed (first result) (second result) (third result) (rest stream))
                       )
                   )
                   )
                 ])
-        (lambda (stream) (feed 'init-state vid stream))
+        (lambda (stream) (feed '() 'init-state vid stream))
         )
       ]
      )
@@ -107,73 +107,73 @@
   (equal? g s)
   )
 
-(define m (stransducer a mlistappend (list true '()) match
-            [a : (1 / (1 ((+ (r 1) 1))) -> b)]
-            [b : (2 / (1 (r 2)) -> a)]
+(define m (stransducer a stateful-append (list->vector '(0 0)) stateful-match
+            [a : ('(1 #t) / (1 ((+ (r 1) 1))) / 1 -> b)]
+            [b : ('(2 #t) / (1 (r 0)) / 1 -> a)]
             )
 )
 
-(define ex0 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
-            [a : ('(1 (<= (r 1) 100)) / (1 ((+ (r 1) (r 1)))) -> a)]
-            [a : ('(1 (<= 100 (r 1))) / (1 (r 2)) -> b)]
-            [b : ('(1 #t) / #t -> b)]
-            )
-)
-
-(define ex1 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
-            [a : ('(1 (<= (r 1) 100)) / (1 ahole1) -> a)]
-            [a : ('(1 (<= 100 (r 1))) / (1 (r 0)) -> b)]
-            [b : ('(1 #t) / #t -> b)]
-            )
-)
-
-(define ex2 (stransducer a stateful-append (list->vector '(0 0)) stateful-match
-            [a : ('(1 bhole1) / (1 ahole1) -> a)]
-            [a : ('(1 bhole2) / (1 ahole2) -> a)]
-            [b : ('(1 #t) / #t -> b)]
-            )
-)
-
-(define ex3 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
-            [a :
-               ('(1 bhole1) / (1 (+ (r 1) 1)) -> a)
-               ('(1 bhole2) / (0 ahole1) -> b)]
-            [b : ('(1 #t) / #t -> b)]
-            )
-)
-
-
-
-(define sol
-  (synthesize
-   #:forall (list)
-   #:guarantee (assert
-                (and 
-                     (equal? (ex3 '(1)) (list->vector '(4 12)))
-                     (equal? (ex3 '(1 1)) (list->vector '(4 36)))
-                     )
-   )
-  )
-  )
-
-(define sol2
-  (synthesize
-   #:forall (list)
-   #:guarantee (assert
-                (and 
-                     (equal? (ex1 '(1)) (list->vector '(4 8)))
-                     (equal? (ex1 '(1 1)) (list->vector '(4 12)))
-                     )
-   )
-  )
-  )
-
-(define (repeat n x)
-  (if (= 0 n)
-      '()
-      (cons x (repeat (- n 1) x))
-      )
-  )
+;(define ex0 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a : ('(1 (<= (r 1) 100)) / (1 ((+ (r 1) (r 1)))) / 1 -> a)]
+;            [a : ('(1 (<= 100 (r 1))) / (1 (r 2)) / 1 -> b)]
+;            [b : ('(1 #t) / #t / 1 -> b)]
+;            )
+;)
+;
+;(define ex1 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a : ('(1 (<= (r 1) 100)) / (1 ahole1) / 1 -> a)]
+;            [a : ('(1 (<= 100 (r 1))) / (1 (r 0)) / 1 -> b)]
+;            [b : ('(1 #t) / #t / 1 -> b)]
+;            )
+;)
+;
+;(define ex2 (stransducer a stateful-append (list->vector '(0 0)) stateful-match
+;            [a : ('(1 bhole1) / (1 ahole1) / 2 -> a)]
+;            [a : ('(1 bhole2) / (1 ahole2) / 2 -> a)]
+;            [b : ('(1 #t) / #t / 2 -> b)]
+;            )
+;)
+;
+;(define ex3 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a :
+;               ('(1 bhole1) / (1 (+ (r 1) 1)) / 2 -> a)
+;               ('(1 bhole2) / (0 ahole1) / 2 -> b)]
+;            [b : ('(1 #t) / #t / 2 -> b)]
+;            )
+;)
+;
+;
+;
+;(define sol
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and 
+;                     (equal? (ex3 '(1)) (list->vector '(4 12)))
+;                     (equal? (ex3 '(1 1)) (list->vector '(4 36)))
+;                     )
+;   )
+;  )
+;  )
+;
+;(define sol2
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and 
+;                     (equal? (ex1 '(1)) (list->vector '(4 8)))
+;                     (equal? (ex1 '(1 1)) (list->vector '(4 12)))
+;                     )
+;   )
+;  )
+;  )
+;
+;(define (repeat n x)
+;  (if (= 0 n)
+;      '()
+;      (cons x (repeat (- n 1) x))
+;      )
+;  )
 
 ;(define sol3
 ;  (synthesize
