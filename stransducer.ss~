@@ -4,7 +4,7 @@
 
 (define-synthax (alang depth)
   #:base (choose (?? integer?) '(r 1) '(r 2) '(r 3) '(r 4))
-  #:else (choose (alang (- depth 1))
+  #:else (choose (?? integer?) '(r 1) '(r 2) '(r 3) '(r 4)
                    (list '+ (alang (- depth 1)) (alang (- depth 1)))
                    (list '* (alang (- depth 1)) (alang (- depth 1)))
                  )
@@ -33,8 +33,6 @@
     ['not (not (leval vector (second expr)))]
     ['== (equal? (leval vector (second expr)) (leval vector (third expr)))]
     ['<= (<= (leval vector (second expr)) (leval vector (third expr)))]
-    ['< (< (leval vector (second expr)) (leval vector (third expr)))]
-    ['> (> (leval vector (second expr)) (leval vector (third expr)))]
     ['+ (apply + (map (lambda (e) (leval vector e)) (rest expr)))]
     ['* (apply * (map (lambda (e) (leval vector e)) (rest expr)))]
     ['r (vector-ref vector (second expr))]
@@ -65,13 +63,13 @@
                             [else  ((error (list output astate vstate)))]
                             )
                           ] ...
-                 [else (error "could not match")]
+                 [else (error "cou;d not mathc")]
                  )
                )]
                [feed
                 (lambda (output astate vstate stream)
                   (if (empty? stream)
-                      (reverse output)
+                      vstate
                       (let ([result (step output astate vstate (first stream))])
                         (feed (first result) (second result) (third result) (rest stream))
                       )
@@ -84,10 +82,11 @@
      )
   )
 
-(define (stateful-append-mult data vstate)
-  (begin
-    (foldr stateful-append vstate data)
-    )
+(define (mlistappend data vstate)
+  (if (first vstate)
+      (list true (append (second vstate) (list data)))
+      (list false vstate)
+  )
   )
 
 (define (stateful-append data vstate)
@@ -108,27 +107,84 @@
   (equal? g s)
   )
 
-; r1 tmin, r2 tmax, r3 tnow
-(define B 3)
-(define Q 25)
-(define TrafficController (stransducer a stateful-append-mult (list->vector '(0 0 0 3)) stateful-match
-            [a :
-               ('(1 (> (r 3) (r 2))) / [(1 (+ (r 3) (* ahole1 25)))
-                                          (2 (+ (r 3) ahole2))
-                                          (3 (+ (r 3) 1))] / 2 -> a)
-               ('(1 (and (< (r 1) (r 3)) (<= (r 3) (r 2)))) / [(1 (+ (r 1) 25))
-                                                               (2 (+ (r 2) 25))
-                                                               (3 (+ (r 3) 1))] / 2 -> a)
-               ('(1 (<= (r 3) (r 1))) / [(3 (+ (r 3) 1))] / 1 -> a)]
+(define m (stransducer a stateful-append (list->vector '(0 0)) stateful-match
+            [a : ('(1 #t) / (1 ((+ (r 1) 1))) / 1 -> b)]
+            [b : ('(2 #t) / (1 (r 0)) / 1 -> a)]
             )
-  )
+)
 
-(define sol
-  (synthesize
-   #:forall (list)
-   #:guarantee (assert (equal? (TrafficController '(1 1 1)) '(2 2 1)))
-   )
-  )
-                                                           
+;(define ex0 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a : ('(1 (<= (r 1) 100)) / (1 ((+ (r 1) (r 1)))) / 1 -> a)]
+;            [a : ('(1 (<= 100 (r 1))) / (1 (r 2)) / 1 -> b)]
+;            [b : ('(1 #t) / #t / 1 -> b)]
+;            )
+;)
+;
+;(define ex1 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a : ('(1 (<= (r 1) 100)) / (1 ahole1) / 1 -> a)]
+;            [a : ('(1 (<= 100 (r 1))) / (1 (r 0)) / 1 -> b)]
+;            [b : ('(1 #t) / #t / 1 -> b)]
+;            )
+;)
+;
+;(define ex2 (stransducer a stateful-append (list->vector '(0 0)) stateful-match
+;            [a : ('(1 bhole1) / (1 ahole1) / 2 -> a)]
+;            [a : ('(1 bhole2) / (1 ahole2) / 2 -> a)]
+;            [b : ('(1 #t) / #t / 2 -> b)]
+;            )
+;)
+;
+;(define ex3 (stransducer a stateful-append (list->vector '(4 4)) stateful-match
+;            [a :
+;               ('(1 bhole1) / (1 (+ (r 1) 1)) / 2 -> a)
+;               ('(1 bhole2) / (0 ahole1) / 2 -> b)]
+;            [b : ('(1 #t) / #t / 2 -> b)]
+;            )
+;)
+;
+;
+;
+;(define sol
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and 
+;                     (equal? (ex3 '(1)) (list->vector '(4 12)))
+;                     (equal? (ex3 '(1 1)) (list->vector '(4 36)))
+;                     )
+;   )
+;  )
+;  )
+;
+;(define sol2
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and 
+;                     (equal? (ex1 '(1)) (list->vector '(4 8)))
+;                     (equal? (ex1 '(1 1)) (list->vector '(4 12)))
+;                     )
+;   )
+;  )
+;  )
+;
+;(define (repeat n x)
+;  (if (= 0 n)
+;      '()
+;      (cons x (repeat (- n 1) x))
+;      )
+;  )
+
+;(define sol3
+;  (synthesize
+;   #:forall (list)
+;   #:guarantee (assert
+;                (and
+;                 (equal? (ex2 '(1 1)) (list->vector '(0 2)))
+;                 (equal? (ex2 '(1 1 1 1 1)) (list->vector '(0 0)))
+;                 )
+;                )
+;   )
+;  )
               
   
