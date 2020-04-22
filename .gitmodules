@@ -1,3 +1,6 @@
 [submodule "synapse"]
 	path = synapse
 	url = https://github.com/uwplse/synapse.git
+[submodule "rosette"]
+	path = rosette
+	url = https://github.com/emina/rosette.git

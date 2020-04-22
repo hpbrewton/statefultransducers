@@ -1,6 +1,11 @@
 #lang rosette
 (require rosette/lib/synthax)
 
+(provide 
+  stransducer
+  stateful-append-mult
+  stateful-match
+  )
 
 (define-synthax (alang depth)
   #:base (choose (?? integer?) '(r 1) '(r 2) '(r 3) '(r 4))
@@ -45,7 +50,10 @@
     ['bhole2 (leval vector (blang 2))]
     ['ahole1 (leval vector (alang 2))]
     ['ahole2 (leval vector (alang 2))]
-    [else expr]
+    [else (if (number? expr)
+      expr 
+      (error "unexpected val")
+    )]
   )
   )
 )
@@ -108,27 +116,27 @@
   (equal? g s)
   )
 
-; r1 tmin, r2 tmax, r3 tnow
-(define B 3)
-(define Q 25)
-(define TrafficController (stransducer a stateful-append-mult (list->vector '(0 0 0 3)) stateful-match
-            [a :
-               ('(1 (> (r 3) (r 2))) / [(1 (+ (r 3) (* ahole1 25)))
-                                          (2 (+ (r 3) ahole2))
-                                          (3 (+ (r 3) 1))] / 2 -> a)
-               ('(1 (and (< (r 1) (r 3)) (<= (r 3) (r 2)))) / [(1 (+ (r 1) 25))
-                                                               (2 (+ (r 2) 25))
-                                                               (3 (+ (r 3) 1))] / 2 -> a)
-               ('(1 (<= (r 3) (r 1))) / [(3 (+ (r 3) 1))] / 1 -> a)]
-            )
-  )
+;;; ; r1 tmin, r2 tmax, r3 tnow
+;;; (define B 3)
+;;; (define Q 25)
+;;; (define TrafficController (stransducer a stateful-append-mult (list->vector '(0 0 0 3)) stateful-match
+;;;             [a :
+;;;                ('(1 (> (r 3) (r 2))) / [(1 (+ (r 3) (* ahole1 25)))
+;;;                                           (2 (+ (r 3) ahole2))
+;;;                                           (3 (+ (r 3) 1))] / 2 -> a)
+;;;                ('(1 (and (< (r 1) (r 3)) (<= (r 3) (r 2)))) / [(1 (+ (r 1) 25))
+;;;                                                                (2 (+ (r 2) 25))
+;;;                                                                (3 (+ (r 3) 1))] / 2 -> a)
+;;;                ('(1 (<= (r 3) (r 1))) / [(3 (+ (r 3) 1))] / 1 -> a)]
+;;;             )
+;;;   )
 
-(define sol
-  (synthesize
-   #:forall (list)
-   #:guarantee (assert (equal? (TrafficController '(1 1 1)) '(2 2 1)))
-   )
-  )
+;;; (define sol
+;;;   (synthesize
+;;;    #:forall (list)
+;;;    #:guarantee (assert (equal? (TrafficController '(1 1 1)) '(2 2 1)))
+;;;    )
+;;;   )
                                                            
               
   

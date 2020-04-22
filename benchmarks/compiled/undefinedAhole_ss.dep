@@ -1,0 +1,1 @@
+("7.5" racket ("7174b57503056962e7c0cf1538fce14fd08cd373" . "26d42fffa31792ed01b0b922090bfd150976ea24") #"/Users/harrison/statefultransducers/benchmarks/../stransducer.rkt" (collects #"racket" #"runtime-config.rkt") (collects #"rosette" #"lang" #"reader.rkt") (collects #"rosette" #"lib" #"synthax.rkt") (collects #"rosette" #"main.rkt"))
