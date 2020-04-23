@@ -46,10 +46,10 @@
     [else (leval vector (first expr))]
         )
   (case expr
-    ['bhole1 (leval vector (blang 2))]
-    ['bhole2 (leval vector (blang 2))]
-    ['ahole1 (leval vector (alang 2))]
-    ['ahole2 (leval vector (alang 2))]
+    ['booleanHole1 (leval vector (blang 2))]
+    ['booleanHole2 (leval vector (blang 2))]
+    ['arithHole1 (leval vector (alang 2))]
+    ['arithHole2 (leval vector (alang 2))]
     [else (if (number? expr)
       expr 
       (error "unexpected val")
@@ -121,8 +121,8 @@
 ;;; (define Q 25)
 ;;; (define TrafficController (stransducer a stateful-append-mult (list->vector '(0 0 0 3)) stateful-match
 ;;;             [a :
-;;;                ('(1 (> (r 3) (r 2))) / [(1 (+ (r 3) (* ahole1 25)))
-;;;                                           (2 (+ (r 3) ahole2))
+;;;                ('(1 (> (r 3) (r 2))) / [(1 (+ (r 3) (* arithHole1 25)))
+;;;                                           (2 (+ (r 3) arithHole2))
 ;;;                                           (3 (+ (r 3) 1))] / 2 -> a)
 ;;;                ('(1 (and (< (r 1) (r 3)) (<= (r 3) (r 2)))) / [(1 (+ (r 1) 25))
 ;;;                                                                (2 (+ (r 2) 25))
